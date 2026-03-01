@@ -1,0 +1,181 @@
+{
+  "brand_identity": {
+    "name": "QRConnect",
+    "core_values": ["Trust", "Privacy", "Simplicity", "Speed"],
+    "emotional_archetype": "Organic Utility (The Digital Guardian)",
+    "tone": "Protective, Calm, Modern, Approachable",
+    "metaphor": "The Invisible Safety Net"
+  },
+  "typography": {
+    "font_family_headings": "Outfit, sans-serif",
+    "font_family_body": "DM Sans, sans-serif",
+    "weights": {
+      "headings": "600",
+      "body_regular": "400",
+      "body_medium": "500",
+      "body_bold": "700"
+    },
+    "rules": [
+      "Headings: Use 'Outfit'. Letter-spacing '-0.02em'. Leading 'tight'.",
+      "Body: Use 'DM Sans'. Letter-spacing 'normal'. Leading 'relaxed'.",
+      "Labels/Overlines: Uppercase, tracking-widest (0.1em), text-xs, font-bold.",
+      "CRITICAL: Do NOT use Inter for headings."
+    ]
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#0F4C5C",
+        "foreground": "#FFFFFF",
+        "description": "Deep Teal - Represents Trust and Security."
+      },
+      "secondary": {
+        "DEFAULT": "#F9F7F2",
+        "foreground": "#0F4C5C",
+        "description": "Warm Sand - Approachable background, human warmth."
+      },
+      "accent": {
+        "DEFAULT": "#E36414",
+        "foreground": "#FFFFFF",
+        "description": "Coral Reef - Action and Emergency (distinct from alarming red)."
+      },
+      "muted": {
+        "DEFAULT": "#F0EFEA",
+        "foreground": "#5F6C7B",
+        "description": "Stone Grey - Subtlety."
+      },
+      "success": {
+        "DEFAULT": "#9A8C98",
+        "foreground": "#FFFFFF",
+        "description": "Sage - Soft confirmation."
+      },
+      "background": "#F9F7F2",
+      "foreground": "#0F4C5C"
+    },
+    "gradients": {
+      "hero_overlay": "linear-gradient(180deg, rgba(15, 76, 92, 0.05) 0%, rgba(15, 76, 92, 0) 100%)",
+      "active_border": "linear-gradient(90deg, #0F4C5C 0%, #E36414 100%)"
+    }
+  },
+  "spacing_and_layout": {
+    "scale_multiplier": "1.5x standard",
+    "container_padding": {
+      "mobile": "p-6",
+      "desktop": "p-12"
+    },
+    "grids": {
+      "bento_grid": "grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-6",
+      "dashboard_grid": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+    },
+    "rules": [
+      "Always use generous padding inside containers with borders.",
+      "Mobile-first: Start with grid-cols-1.",
+      "Scanner View: Must be absolutely centered with zero distractions."
+    ]
+  },
+  "components": {
+    "buttons": {
+      "style": "pill",
+      "radius": "rounded-full",
+      "height": "h-12",
+      "text": "font-medium tracking-wide",
+      "variants": {
+        "primary": "bg-[#0F4C5C] text-white hover:bg-[#0A333E] hover:scale-105 transition-all duration-200 shadow-lg shadow-[#0F4C5C]/20",
+        "secondary": "bg-white text-[#0F4C5C] border border-[#0F4C5C]/10 hover:bg-[#F9F7F2]",
+        "destructive": "bg-[#E36414] text-white hover:bg-[#C5530E] shadow-lg shadow-[#E36414]/20",
+        "scan_trigger": "h-16 w-16 rounded-full bg-[#E36414] shadow-xl flex items-center justify-center animate-pulse"
+      }
+    },
+    "cards": {
+      "style": "clean_soft",
+      "base": "bg-white rounded-2xl border border-[#0F4C5C]/5 shadow-sm hover:shadow-md transition-shadow duration-300",
+      "dashboard_card": "p-6 flex flex-col justify-between h-full"
+    },
+    "inputs": {
+      "height": "h-12",
+      "radius": "rounded-xl",
+      "border": "border-[#0F4C5C]/20 focus:border-[#0F4C5C] focus:ring-2 focus:ring-[#0F4C5C]/10 bg-white"
+    },
+    "visual_enhancers": {
+      "glass": "backdrop-blur-md bg-white/70 border border-white/40",
+      "noise": "Use a subtle noise texture on the main background if possible to reduce digital flatness."
+    }
+  },
+  "motion": {
+    "philosophy": "Confident & Snappy",
+    "transitions": "transition-all duration-300 ease-out",
+    "entrance": {
+      "initial": { "opacity": 0, "y": 20 },
+      "animate": { "opacity": 1, "y": 0 },
+      "exit": { "opacity": 0, "y": -20 }
+    },
+    "micro_interactions": {
+      "hover_lift": "hover:-translate-y-1 hover:shadow-lg",
+      "click_press": "active:scale-95"
+    }
+  },
+  "images": {
+    "hero_section": {
+      "url": "https://images.unsplash.com/photo-1767082091146-c6691c772875?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTV8MHwxfHNlYXJjaHwzfHxoYXBweSUyMG1vdGhlciUyMGFuZCUyMGNoaWxkJTIwaW4lMjBwYXJrfGVufDB8fHx8MTc3MjAxNjQxN3ww&ixlib=rb-4.1.0&q=85",
+      "alt": "Parent and child enjoying a safe moment in the park",
+      "usage": "Hero background or main visual on Landing Page"
+    },
+    "features_car": {
+      "url": "https://images.unsplash.com/photo-1675074509204-8d94669c9dd7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzF8MHwxfHNlYXJjaHwzfHxwZXJzb24lMjBzY2FubmluZyUyMHFyJTIwY29kZSUyMG9uJTIwY2FyJTIwd2luZG93fGVufDB8fHx8MTc3MjAxNjQxNnww&ixlib=rb-4.1.0&q=85",
+      "alt": "QR code sticker on car window",
+      "usage": "Feature section: Vehicle Safety"
+    },
+    "features_lost_item": {
+      "url": "https://images.unsplash.com/photo-1693641198640-55dc3ee0d345?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHwyfHxsb3N0JTIwa2V5cyUyMG9uJTIwY2FmZSUyMHRhYmxlfGVufDB8fHx8MTc3MjAxNjQxN3ww&ixlib=rb-4.1.0&q=85",
+      "alt": "Lost item on a table",
+      "usage": "Feature section: Asset Recovery"
+    },
+    "testimonials": [
+      {
+        "url": "https://images.unsplash.com/photo-1572262280988-53b4269f4af9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwzfHxkaXZlcnNlJTIwdXNlciUyMHBvcnRyYWl0cyUyMHNtaWxpbmd8ZW58MHx8fHwxNzcyMDE2NDE4fDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Happy user 1"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1652772589253-c1ab2308fbf4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwxfHxkaXZlcnNlJTIwdXNlciUyMHBvcnRyYWl0cyUyMHNtaWxpbmd8ZW58MHx8fHwxNzcyMDE2NDE4fDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Happy user 2"
+      }
+    ]
+  },
+  "instructions_to_main_agent": {
+    "shadcn_customization": [
+      "Change default radius in `globals.css` to `0.75rem` (12px).",
+      "Override primary color variable to `0 4c 5c` (converted to HSL/RGB if needed).",
+      "Do NOT use the default 'slate' colors. Use the Warm Sand palette for backgrounds.",
+      "For the Scanner Page: Hide the standard nav. Make it full screen. Use a 'Viewfinder' overlay (4 corner brackets) to indicate scanning area."
+    ],
+    "layout_specifics": {
+      "landing_page": "Use a Bento Grid (Mode A). Hero text on left (col-span-8), Emotional Image on right (col-span-4). Feature cards below.",
+      "dashboard": "Use High Density Grid (Mode B). 'My QRs' takes prominence. Subscription status is a small side widget.",
+      "scanner": "Absolute minimalism. Center the camera view. One clear button 'Call Owner' that appears ONLY after scan. Trust badges (Secure, Anonymous) visible at bottom."
+    },
+    "accessibility_check": [
+      "Ensure the 'Deep Teal' text has 4.5:1 contrast on the 'Warm Sand' background.",
+      "Buttons must have visible focus states."
+    ]
+  },
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "You MUST NOT apply universal transition. Eg: `transition: all`. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms.",
+    "You MUST NOT center align the app container, ie do not add `.App { text-align: center; }` in the css file. This disrupts the human natural reading flow of text.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style.",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN.",
+    "Prioritize using pre-existing components from src/components/ui when applicable.",
+    "Components MUST use named exports (export const ComponentName = ...).",
+    "Pages MUST use default exports (export default function PageName() {...}).",
+    "Use `sonner` for toasts.",
+    "All interactive and key informational elements MUST include a `data-testid` attribute."
+  ]
+}

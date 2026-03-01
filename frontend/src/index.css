@@ -1,0 +1,215 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 40 33% 97%;
+        --foreground: 192 71% 21%;
+        --card: 0 0% 100%;
+        --card-foreground: 192 71% 21%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 192 71% 21%;
+        --primary: 192 71% 21%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 40 33% 97%;
+        --secondary-foreground: 192 71% 21%;
+        --muted: 40 20% 94%;
+        --muted-foreground: 210 15% 43%;
+        --accent: 24 85% 48%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 24 85% 48%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 192 71% 21% / 0.1;
+        --input: 192 71% 21% / 0.2;
+        --ring: 192 71% 21%;
+        --radius: 0.75rem;
+        --success: 320 9% 59%;
+        --success-foreground: 0 0% 100%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+        font-family: 'DM Sans', sans-serif;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: -0.02em;
+    }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #F9F7F2;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #0F4C5C;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #0A333E;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-delay-100 {
+    animation-delay: 0.1s;
+}
+
+.animate-delay-200 {
+    animation-delay: 0.2s;
+}
+
+.animate-delay-300 {
+    animation-delay: 0.3s;
+}
+
+.animate-delay-400 {
+    animation-delay: 0.4s;
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Glass morphism */
+.glass {
+    backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Noise texture overlay */
+.noise-bg {
+    position: relative;
+}
+
+.noise-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* QR Code styling */
+.qr-container {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(15, 76, 92, 0.1);
+}
+
+/* Call button pulse */
+.call-button-pulse {
+    position: relative;
+}
+
+.call-button-pulse::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: #E36414;
+    animation: pulse-ring 1.5s ease-out infinite;
+    z-index: -1;
+}
+
+/* Input focus states */
+input:focus, select:focus {
+    outline: none;
+    border-color: #0F4C5C;
+    box-shadow: 0 0 0 3px rgba(15, 76, 92, 0.1);
+}
+
+/* Button hover effects */
+.btn-primary {
+    @apply bg-[#0F4C5C] text-white rounded-full px-8 py-3 font-medium;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+    @apply bg-[#0A333E];
+    transform: scale(1.02);
+    box-shadow: 0 10px 20px rgba(15, 76, 92, 0.2);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-accent {
+    @apply bg-[#E36414] text-white rounded-full px-8 py-3 font-medium;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-accent:hover {
+    @apply bg-[#C5530E];
+    transform: scale(1.02);
+    box-shadow: 0 10px 20px rgba(227, 100, 20, 0.2);
+}
+
+.btn-accent:active {
+    transform: scale(0.98);
+}
+
+/* Hide Emergent branding badge */
+[data-emergent-badge],
+[class*="emergent-badge"],
+div[style*="Made with Emergent"],
+a[href*="emergent.sh"][style*="position: fixed"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
