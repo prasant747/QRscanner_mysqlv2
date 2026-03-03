@@ -17,6 +17,8 @@ import string
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# CI/CD Auto-registration test
+
 # MySQL connection
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
