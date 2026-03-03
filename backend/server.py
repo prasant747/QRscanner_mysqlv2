@@ -97,6 +97,7 @@ class VerifyPaymentRequest(BaseModel):
 
 class InitiateCallRequest(BaseModel):
     qr_code: str
+    caller_number: str
 
 class UserResponse(BaseModel):
     id: str
@@ -414,8 +415,13 @@ async def scan_qr(qr_code: str):
         
         return QRScanResponse(status="active", message="This QR is registered with QRConnect. Click below to contact the owner anonymously.", can_call=True)
 
-@api_router.post("/call/initiate", response_model=CallResponse)
+class InitiateCallRequest(BaseModel):
+    qr_code: str
+    caller_number: str  # Add this field
+
+@api_router.post("/call/initiate")
 async def initiate_call(request: InitiateCallRequest):
+    """Create anonymous call session using Twilio Proxy"""
     async with async_session() as session:
         user = await get_user_by_qr(session, request.qr_code)
         
@@ -426,16 +432,67 @@ async def initiate_call(request: InitiateCallRequest):
         if user.remaining_calls <= 0:
             raise HTTPException(status_code=400, detail="Call limit reached")
         
-        import asyncio
-        await asyncio.sleep(2)
+        # Format phone numbers
+        owner_number = user.mobile_number if user.mobile_number.startswith('+') else '+91' + user.mobile_number
+        caller_number = request.caller_number if request.caller_number.startswith('+') else '+91' + request.caller_number
         
-        user.remaining_calls -= 1
-        call_log = CallLogModel(id=str(uuid.uuid4()), user_id=user.id, status="connected")
-        session.add(call_log)
-        await session.commit()
-        
-        logger.info(f"Call initiated for QR: {request.qr_code}")
-        return CallResponse(success=True, message="Call connected successfully!", call_status="connected")
+        try:
+            from twilio.rest import Client
+            client = Client(
+                os.environ.get('TWILIO_ACCOUNT_SID'),
+                os.environ.get('TWILIO_AUTH_TOKEN')
+            )
+            
+            proxy_service_sid = os.environ.get('TWILIO_PROXY_SERVICE_SID')
+            
+            # Create a new proxy session
+            proxy_session = client.proxy.v1.services(proxy_service_sid).sessions.create(
+                unique_name=f"call_{user.id}_{uuid.uuid4().hex[:8]}",
+                mode='voice-only'
+            )
+            
+            # Add the owner (QR owner) as participant
+            owner_participant = client.proxy.v1.services(proxy_service_sid) \
+                .sessions(proxy_session.sid) \
+                .participants.create(
+                    friendly_name='Owner',
+                    identifier=owner_number
+                )
+            
+            # Add the caller (finder) as participant
+            caller_participant = client.proxy.v1.services(proxy_service_sid) \
+                .sessions(proxy_session.sid) \
+                .participants.create(
+                    friendly_name='Caller',
+                    identifier=caller_number
+                )
+            
+            # Decrement call count
+            user.remaining_calls -= 1
+            
+            # Log the call
+            call_log = CallLogModel(
+                id=str(uuid.uuid4()),
+                user_id=user.id,
+                status="initiated"
+            )
+            session.add(call_log)
+            await session.commit()
+            
+            logger.info(f"Proxy session created for QR: {request.qr_code}")
+            
+            # Return the proxy number for the caller to dial
+            return {
+                "success": True,
+                "message": "Call session created! Dial the number below to connect anonymously.",
+                "proxy_number": caller_participant.proxy_identifier,
+                "call_status": "ready",
+                "session_sid": proxy_session.sid
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to create proxy session: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Failed to initiate call: {str(e)}")
 
 @api_router.get("/user/payments/{mobile_number}")
 async def get_payments(mobile_number: str):
