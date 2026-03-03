@@ -33,7 +33,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await axios.post(`${API}/auth/send-otp`, { mobile_number: mobile });
-      toast.success("OTP sent! Use 123456 for testing");
+      toast.success("OTP sent successfully!");
       setOtp(""); // Clear any previous OTP
       setStep(2);
     } catch (error) {
@@ -243,10 +243,6 @@ export default function RegisterPage() {
                     data-testid="otp-input"
                   />
                 </div>
-                
-                <p className="text-sm text-[#5F6C7B] text-center">
-                  For testing, use OTP: <span className="font-semibold text-[#E36414]">123456</span>
-                </p>
                 
                 <Button 
                   className="w-full h-14 bg-[#0F4C5C] text-white rounded-full text-lg font-medium hover:bg-[#0A333E] hover:scale-[1.02] transition-transform duration-200 shadow-lg shadow-[#0F4C5C]/20"

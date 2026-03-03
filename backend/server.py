@@ -159,16 +159,47 @@ async def send_otp(request: SendOTPRequest):
     mobile = request.mobile_number.strip()
     if len(mobile) < 10:
         raise HTTPException(status_code=400, detail="Invalid mobile number")
-    otp_storage[mobile] = "123456"
-    logger.info(f"OTP sent to {mobile}: 123456 (mock)")
-    return {"success": True, "message": "OTP sent successfully"}
+    
+    # Format number for Twilio (add +91 for Indian numbers if not present)
+    if not mobile.startswith('+'):
+        mobile = '+91' + mobile
+    
+    try:
+        from twilio.rest import Client
+        client = Client(os.environ.get('TWILIO_ACCOUNT_SID'), os.environ.get('TWILIO_AUTH_TOKEN'))
+        
+        verification = client.verify.v2.services(os.environ.get('TWILIO_VERIFY_SERVICE_SID')) \
+            .verifications.create(to=mobile, channel='sms')
+        
+        logger.info(f"OTP sent to {mobile}, status: {verification.status}")
+        return {"success": True, "message": "OTP sent successfully"}
+    except Exception as e:
+        logger.error(f"Failed to send OTP: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to send OTP: {str(e)}")
 
 @api_router.post("/auth/verify-otp")
 async def verify_otp(request: VerifyOTPRequest):
     mobile = request.mobile_number.strip()
     otp = request.otp.strip()
     
-    if otp != "123456":
+    # Format number for Twilio
+    formatted_mobile = mobile if mobile.startswith('+') else '+91' + mobile
+    
+    try:
+        from twilio.rest import Client
+        client = Client(os.environ.get('TWILIO_ACCOUNT_SID'), os.environ.get('TWILIO_AUTH_TOKEN'))
+        
+        verification_check = client.verify.v2.services(os.environ.get('TWILIO_VERIFY_SERVICE_SID')) \
+            .verification_checks.create(to=formatted_mobile, code=otp)
+        
+        if verification_check.status != "approved":
+            raise HTTPException(status_code=400, detail="Invalid OTP")
+        
+        logger.info(f"OTP verified for {mobile}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"OTP verification failed: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
     async with async_session() as session:

@@ -24,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await axios.post(`${API}/auth/send-otp`, { mobile_number: mobile });
-      toast.success("OTP sent! Use 123456 for testing");
+      toast.success("OTP sent to your phone!");
       setOtp(""); // Clear any previous OTP
       setStep(2);
     } catch (error) {
