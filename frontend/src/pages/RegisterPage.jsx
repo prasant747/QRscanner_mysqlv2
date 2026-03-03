@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,17 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [userData, setUserData] = useState(null);
 
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const steps = [
     { num: 1, label: "Mobile", icon: <Phone className="w-4 h-4" /> },
     { num: 2, label: "Verify", icon: <Check className="w-4 h-4" /> },
@@ -33,8 +44,8 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await axios.post(`${API}/auth/send-otp`, { mobile_number: mobile });
-      toast.success("OTP sent successfully!");
-      setOtp(""); // Clear any previous OTP
+      toast.success("OTP sent to your phone!");
+      setOtp("");
       setStep(2);
     } catch (error) {
       toast.error(error.response?.data?.detail || "Failed to send OTP");
@@ -44,7 +55,6 @@ export default function RegisterPage() {
 
   const handleVerifyOTP = async () => {
     const otpValue = otp.trim();
-    console.log("Verifying OTP:", otpValue, "Length:", otpValue.length);
     
     if (otpValue.length !== 6) {
       toast.error("Please enter 6-digit OTP");
@@ -71,7 +81,6 @@ export default function RegisterPage() {
         setStep(3);
       }
     } catch (error) {
-      console.error("OTP Error:", error.response?.data);
       toast.error(error.response?.data?.detail || "Invalid OTP");
     }
     setLoading(false);
@@ -100,17 +109,61 @@ export default function RegisterPage() {
   const handlePayment = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API}/payment/process`, {
+      // Step 1: Create Razorpay order
+      const orderResponse = await axios.post(`${API}/payment/create-order`, {
         mobile_number: mobile,
         amount: 100
       });
-      localStorage.setItem("qrconnect_user", JSON.stringify(response.data.user));
-      toast.success("Payment successful! Your QR is ready");
-      navigate("/dashboard");
+
+      const { order_id, amount, currency, key_id } = orderResponse.data;
+
+      // Step 2: Open Razorpay checkout
+      const options = {
+        key: key_id,
+        amount: amount,
+        currency: currency,
+        name: "QRConnect",
+        description: "Annual Subscription - 20 Anonymous Calls",
+        order_id: order_id,
+        handler: async function (response) {
+          // Step 3: Verify payment on backend
+          try {
+            const verifyResponse = await axios.post(`${API}/payment/verify`, {
+              mobile_number: mobile,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+
+            localStorage.setItem("qrconnect_user", JSON.stringify(verifyResponse.data.user));
+            toast.success("Payment successful! Your QR is ready");
+            navigate("/dashboard");
+          } catch (error) {
+            toast.error("Payment verification failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: name || userData?.name || "",
+          contact: mobile
+        },
+        theme: {
+          color: "#0F4C5C"
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+            toast.error("Payment cancelled");
+          }
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+      
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Payment failed");
+      toast.error(error.response?.data?.detail || "Failed to initiate payment");
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleOtpChange = (e) => {
@@ -336,13 +389,13 @@ export default function RegisterPage() {
                 ) : (
                   <>
                     <CreditCard className="w-5 h-5 mr-2" />
-                    Pay ₹100 via UPI
+                    Pay ₹100
                   </>
                 )}
               </Button>
               
               <p className="text-xs text-center text-[#5F6C7B] mt-4">
-                This is a mock payment for testing. Real UPI integration coming soon.
+                Secure payment powered by Razorpay
               </p>
             </div>
           )}

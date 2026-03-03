@@ -13,11 +13,10 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import secrets
 import string
+import razorpay
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
-
-# CI/CD Auto-registration test
 
 # MySQL connection
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -64,8 +63,8 @@ class PaymentModel(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), nullable=False, index=True)
     amount = Column(Integer, nullable=False)
-    payment_type = Column(String(20), nullable=False)  # new, recharge, renew
-    status = Column(String(20), default="success")  # success, failed, pending
+    payment_type = Column(String(20), nullable=False)
+    status = Column(String(20), default="success")
     transaction_id = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -85,6 +84,16 @@ class CompleteRegistrationRequest(BaseModel):
 class ProcessPaymentRequest(BaseModel):
     mobile_number: str
     amount: int = 100
+
+class CreateOrderRequest(BaseModel):
+    mobile_number: str
+    amount: int = 100
+
+class VerifyPaymentRequest(BaseModel):
+    mobile_number: str
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
 
 class InitiateCallRequest(BaseModel):
     qr_code: str
@@ -109,9 +118,6 @@ class CallResponse(BaseModel):
     success: bool
     message: str
     call_status: str
-
-# ============== OTP STORAGE ==============
-otp_storage = {}
 
 # ============== HELPER FUNCTIONS ==============
 
@@ -160,7 +166,6 @@ async def send_otp(request: SendOTPRequest):
     if len(mobile) < 10:
         raise HTTPException(status_code=400, detail="Invalid mobile number")
     
-    # Format number for Twilio (add +91 for Indian numbers if not present)
     if not mobile.startswith('+'):
         mobile = '+91' + mobile
     
@@ -182,7 +187,6 @@ async def verify_otp(request: VerifyOTPRequest):
     mobile = request.mobile_number.strip()
     otp = request.otp.strip()
     
-    # Format number for Twilio
     formatted_mobile = mobile if mobile.startswith('+') else '+91' + mobile
     
     try:
@@ -251,54 +255,108 @@ async def complete_registration(request: CompleteRegistrationRequest):
         
         return {"success": True, "user": user_to_dict(user), "message": "Registration updated"}
 
-# ============== PAYMENT ROUTES ==============
+# ============== PAYMENT ROUTES (RAZORPAY) ==============
 
-@api_router.post("/payment/process")
-async def process_payment(request: ProcessPaymentRequest):
+@api_router.post("/payment/create-order")
+async def create_order(request: CreateOrderRequest):
+    """Create Razorpay order"""
     mobile = request.mobile_number.strip()
     
     async with async_session() as session:
         user = await get_user_by_mobile(session, mobile)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
+    
+    try:
+        client = razorpay.Client(auth=(
+            os.environ.get('RAZORPAY_KEY_ID'),
+            os.environ.get('RAZORPAY_KEY_SECRET')
+        ))
         
-        # Determine payment type
+        order_data = {
+            "amount": request.amount * 100,
+            "currency": "INR",
+            "receipt": f"ord_{user.id[:8]}",
+            "payment_capture": 1
+        }
+        
+        order = client.order.create(data=order_data)
+        logger.info(f"Razorpay order created: {order['id']} for {mobile}")
+        
+        return {
+            "success": True,
+            "order_id": order["id"],
+            "amount": order["amount"],
+            "currency": order["currency"],
+            "key_id": os.environ.get('RAZORPAY_KEY_ID')
+        }
+    except Exception as e:
+        logger.error(f"Failed to create order: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to create order: {str(e)}")
+
+@api_router.post("/payment/verify")
+async def verify_payment(request: VerifyPaymentRequest):
+    """Verify Razorpay payment and activate subscription"""
+    mobile = request.mobile_number.strip()
+    
+    try:
+        client = razorpay.Client(auth=(
+            os.environ.get('RAZORPAY_KEY_ID'),
+            os.environ.get('RAZORPAY_KEY_SECRET')
+        ))
+        
+        params = {
+            'razorpay_order_id': request.razorpay_order_id,
+            'razorpay_payment_id': request.razorpay_payment_id,
+            'razorpay_signature': request.razorpay_signature
+        }
+        client.utility.verify_payment_signature(params)
+        logger.info(f"Payment verified for {mobile}")
+        
+    except razorpay.errors.SignatureVerificationError:
+        logger.error(f"Payment signature verification failed for {mobile}")
+        raise HTTPException(status_code=400, detail="Payment verification failed")
+    except Exception as e:
+        logger.error(f"Payment verification error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Payment verification failed: {str(e)}")
+    
+    async with async_session() as session:
+        user = await get_user_by_mobile(session, mobile)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
         if user.subscription_status == "pending":
             payment_type = "new"
-        elif user.subscription_status == "expired" or (user.subscription_expiry_date and datetime.now().replace(tzinfo=None) > user.subscription_expiry_date.replace(tzinfo=None)):
+        elif user.subscription_status == "expired":
             payment_type = "recharge"
-        elif user.remaining_calls <= 0:
-            payment_type = "renew"
         else:
-            payment_type = "topup"
+            payment_type = "renew"
         
         start_date = datetime.now(timezone.utc)
         expiry_date = start_date + timedelta(days=365)
         
-        # Update user subscription
         user.subscription_status = "active"
         user.subscription_start_date = start_date
         user.subscription_expiry_date = expiry_date
         user.remaining_calls = 20
         
-        # Record payment
         payment = PaymentModel(
             id=str(uuid.uuid4()),
             user_id=user.id,
-            amount=request.amount,
+            amount=100,
             payment_type=payment_type,
             status="success",
-            transaction_id=f"TXN_{secrets.token_hex(8).upper()}",
+            transaction_id=request.razorpay_payment_id,
             created_at=datetime.now(timezone.utc)
         )
         session.add(payment)
         await session.commit()
         await session.refresh(user)
         
-        logger.info(f"Payment processed for {mobile}: ₹{request.amount} ({payment_type})")
+        logger.info(f"Subscription activated for {mobile}")
         return {
             "success": True,
-            "message": "Payment successful. Subscription activated!",
+            "message": "Payment successful! Subscription activated.",
             "user": user_to_dict(user),
             "payment_type": payment_type
         }
@@ -369,7 +427,7 @@ async def initiate_call(request: InitiateCallRequest):
             raise HTTPException(status_code=400, detail="Call limit reached")
         
         import asyncio
-        await asyncio.sleep(2)  # Simulate call connection
+        await asyncio.sleep(2)
         
         user.remaining_calls -= 1
         call_log = CallLogModel(id=str(uuid.uuid4()), user_id=user.id, status="connected")
@@ -378,7 +436,7 @@ async def initiate_call(request: InitiateCallRequest):
         
         logger.info(f"Call initiated for QR: {request.qr_code}")
         return CallResponse(success=True, message="Call connected successfully!", call_status="connected")
-    
+
 @api_router.get("/user/payments/{mobile_number}")
 async def get_payments(mobile_number: str):
     async with async_session() as session:
