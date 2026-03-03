@@ -213,3 +213,20 @@ a[href*="emergent.sh"][style*="position: fixed"] {
     visibility: hidden !important;
     opacity: 0 !important;
 }
+
+/* Hide Emergent Badge Globally */
+[data-emergent-badge],
+[class*="emergent"],
+iframe[src*="emergent"],
+div[style*="Made with Emergent"],
+div[style*="emergent"],
+a[href*="emergent.sh"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
