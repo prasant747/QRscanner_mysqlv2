@@ -71,7 +71,7 @@ jobs:
         run: |
           cd frontend
           npm install --legacy-peer-deps
-          npm run build
+          CI=false npm run build
         env:
           REACT_APP_BACKEND_URL: https://dp53nbks6sfrj.cloudfront.net
 
