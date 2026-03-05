@@ -11,12 +11,11 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function ScanPage() {
   const { qrCode } = useParams();
-  const [status, setStatus] = useState("loading"); // loading, active, inactive, enterPhone, calling, connected
+  const [status, setStatus] = useState("loading");
   const [message, setMessage] = useState("");
   const [canCall, setCanCall] = useState(false);
   const [calling, setCalling] = useState(false);
   const [callerNumber, setCallerNumber] = useState("");
-  const [proxyNumber, setProxyNumber] = useState("");
 
   useEffect(() => {
     checkQRStatus();
@@ -55,9 +54,8 @@ export default function ScanPage() {
       });
       
       if (response.data.success) {
-        setProxyNumber(response.data.proxy_number);
         setStatus("connected");
-        toast.success("Call session created!");
+        toast.success("Call initiated! Check your phone.");
       } else {
         setStatus("active");
         toast.error("Call failed. Please try again.");
@@ -72,7 +70,7 @@ export default function ScanPage() {
 
   return (
     <div className="min-h-screen bg-[#F9F7F2] flex flex-col" data-testid="scan-page">
-      {/* Minimal Header */}
+      {/* Header */}
       <header className="px-6 py-4">
         <div className="flex items-center justify-center gap-2">
           <div className="w-8 h-8 rounded-full bg-[#0F4C5C] flex items-center justify-center">
@@ -85,6 +83,7 @@ export default function ScanPage() {
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
+          
           {/* Loading State */}
           {status === "loading" && (
             <div className="text-center animate-fade-in-up" data-testid="loading-state">
@@ -112,7 +111,6 @@ export default function ScanPage() {
                 {message}
               </p>
               
-              {/* Call Button */}
               <div className="relative inline-block mb-8">
                 <div className="call-button-pulse">
                   <Button 
@@ -133,7 +131,6 @@ export default function ScanPage() {
                 Your identity will remain anonymous
               </p>
               
-              {/* Trust Badges */}
               <div className="mt-10 flex items-center justify-center gap-6">
                 <div className="flex items-center gap-2 text-[#5F6C7B] text-sm">
                   <Lock className="w-4 h-4" />
@@ -158,7 +155,7 @@ export default function ScanPage() {
                 Enter Your Number
               </h1>
               <p className="text-[#5F6C7B] mb-6 leading-relaxed">
-                We'll give you a number to call. Your real number stays hidden.
+                We'll call you and connect you to the owner anonymously.
               </p>
               
               <div className="text-left mb-6">
@@ -187,7 +184,7 @@ export default function ScanPage() {
                 disabled={calling || callerNumber.length < 10}
                 data-testid="initiate-call-btn"
               >
-                {calling ? <Loader2 className="w-5 h-5 animate-spin" /> : "Get Anonymous Number"}
+                {calling ? <Loader2 className="w-5 h-5 animate-spin" /> : "Call Me Now"}
               </Button>
               
               <button 
@@ -199,7 +196,7 @@ export default function ScanPage() {
               
               <div className="mt-6 bg-[#F0EFEA] rounded-xl p-4 text-sm text-[#5F6C7B]">
                 <Lock className="w-4 h-4 inline mr-2" />
-                Your number is only used to create the anonymous connection. Neither party sees the other's real number.
+                Your number is only used to connect the call. Neither party sees the other's real number.
               </div>
             </div>
           )}
@@ -212,10 +209,10 @@ export default function ScanPage() {
               </div>
               
               <h1 className="font-heading text-2xl font-semibold text-[#0F4C5C] mb-3">
-                Setting Up...
+                Initiating Call...
               </h1>
               <p className="text-[#5F6C7B]">
-                Creating your anonymous connection
+                Please wait while we set up your anonymous call
               </p>
               
               <div className="mt-8 flex justify-center">
@@ -228,52 +225,39 @@ export default function ScanPage() {
             </div>
           )}
 
-          {/* Connected State - Show Proxy Number */}
+          {/* Connected State - Call Initiated */}
           {status === "connected" && (
             <div className="text-center animate-fade-in-up" data-testid="connected-state">
               <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle2 className="w-12 h-12 text-green-600" />
+                <Phone className="w-12 h-12 text-green-600 animate-pulse" />
               </div>
               
               <h1 className="font-heading text-2xl font-semibold text-[#0F4C5C] mb-3">
-                Ready to Call!
+                Call Initiated!
               </h1>
               <p className="text-[#5F6C7B] mb-6">
-                Call this number to connect anonymously with the owner:
+                You will receive a call from <strong>+1 570 600 5604</strong> shortly.
+                <br />Answer it to connect with the owner.
               </p>
               
               <div className="bg-[#0F4C5C] rounded-2xl p-6 mb-6">
-                <p className="text-white/70 text-sm mb-2">Dial this number:</p>
-                <a 
-                  href={`tel:${proxyNumber}`}
-                  className="text-white text-3xl font-bold tracking-wider hover:text-[#E36414] transition-colors"
-                  data-testid="proxy-number"
-                >
-                  {proxyNumber}
-                </a>
+                <p className="text-white/70 text-sm mb-2">Incoming call from:</p>
+                <p className="text-white text-2xl font-bold tracking-wider">
+                  +1 570 600 5604
+                </p>
               </div>
               
-              <Button 
-                className="w-full h-14 bg-[#E36414] text-white rounded-full text-lg font-medium hover:bg-[#C5530E] shadow-lg mb-4"
-                onClick={() => window.location.href = `tel:${proxyNumber}`}
-                data-testid="dial-btn"
-              >
-                <Phone className="w-5 h-5 mr-2" />
-                Tap to Dial
-              </Button>
-              
-              <div className="bg-green-50 rounded-xl p-4 text-green-700 text-sm">
+              <div className="bg-green-50 rounded-xl p-4 text-green-700 text-sm mb-6">
                 <Shield className="w-4 h-4 inline mr-2" />
-                Both parties' real numbers are hidden. The session expires after the call.
+                Both parties' real numbers are hidden. You'll only see our Twilio number.
               </div>
               
               <Button 
                 variant="outline"
-                className="mt-4 rounded-full px-6"
+                className="rounded-full px-6"
                 onClick={() => {
                   setStatus("active");
                   setCallerNumber("");
-                  setProxyNumber("");
                 }}
                 data-testid="new-call-btn"
               >
@@ -312,16 +296,6 @@ export default function ScanPage() {
           Powered by <span className="font-medium text-[#0F4C5C]">QRConnect</span> - Privacy-First Contact
         </p>
       </footer>
-      
-      {/* Hide Emergent Badge */}
-      <style>{`
-        [data-emergent-badge], 
-        [class*="emergent"], 
-        iframe[src*="emergent"],
-        div[style*="Made with Emergent"] {
-          display: none !important;
-        }
-      `}</style>
     </div>
   );
 }

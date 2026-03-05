@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Request
+from fastapi.responses import Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -394,7 +395,7 @@ async def get_call_logs(mobile_number: str):
             "logs": [{"id": l.id, "timestamp": l.timestamp.isoformat(), "status": l.status} for l in logs]
         }
 
-# ============== SCAN & CALL ROUTES ==============
+# ============== SCAN & CALL ROUTES (TWILIO VOICE API) ==============
 
 @api_router.get("/scan/{qr_code}", response_model=QRScanResponse)
 async def scan_qr(qr_code: str):
@@ -415,13 +416,20 @@ async def scan_qr(qr_code: str):
         
         return QRScanResponse(status="active", message="This QR is registered with QRConnect. Click below to contact the owner anonymously.", can_call=True)
 
-class InitiateCallRequest(BaseModel):
-    qr_code: str
-    caller_number: str  # Add this field
+@api_router.post("/call/twiml/{owner_number}")
+async def call_twiml(owner_number: str):
+    """TwiML webhook - tells Twilio to connect to owner"""
+    from twilio.twiml.voice_response import VoiceResponse
+    
+    response = VoiceResponse()
+    response.say("Connecting you to the owner. Please wait.", voice='alice')
+    response.dial(owner_number, caller_id=os.environ.get('TWILIO_PHONE_NUMBER'))
+    
+    return Response(content=str(response), media_type="application/xml")
 
 @api_router.post("/call/initiate")
 async def initiate_call(request: InitiateCallRequest):
-    """Create anonymous call session using Twilio Proxy"""
+    """Initiate anonymous call using Twilio Voice API"""
     async with async_session() as session:
         user = await get_user_by_qr(session, request.qr_code)
         
@@ -443,29 +451,16 @@ async def initiate_call(request: InitiateCallRequest):
                 os.environ.get('TWILIO_AUTH_TOKEN')
             )
             
-            proxy_service_sid = os.environ.get('TWILIO_PROXY_SERVICE_SID')
+            twilio_number = os.environ.get('TWILIO_PHONE_NUMBER')
+            backend_url = os.environ.get('BACKEND_URL', 'https://dp53nbks6sfrj.cloudfront.net')
             
-            # Create a new proxy session
-            proxy_session = client.proxy.v1.services(proxy_service_sid).sessions.create(
-                unique_name=f"call_{user.id}_{uuid.uuid4().hex[:8]}",
-                mode='voice-only'
+            # Create the call - Twilio calls the finder first
+            call = client.calls.create(
+                to=caller_number,  # Call the finder
+                from_=twilio_number,  # From Twilio number
+                url=f"{backend_url}/api/call/twiml/{owner_number}",  # Webhook to connect to owner
+                method='POST'
             )
-            
-            # Add the owner (QR owner) as participant
-            owner_participant = client.proxy.v1.services(proxy_service_sid) \
-                .sessions(proxy_session.sid) \
-                .participants.create(
-                    friendly_name='Owner',
-                    identifier=owner_number
-                )
-            
-            # Add the caller (finder) as participant
-            caller_participant = client.proxy.v1.services(proxy_service_sid) \
-                .sessions(proxy_session.sid) \
-                .participants.create(
-                    friendly_name='Caller',
-                    identifier=caller_number
-                )
             
             # Decrement call count
             user.remaining_calls -= 1
@@ -479,19 +474,17 @@ async def initiate_call(request: InitiateCallRequest):
             session.add(call_log)
             await session.commit()
             
-            logger.info(f"Proxy session created for QR: {request.qr_code}")
+            logger.info(f"Call initiated: {call.sid} for QR: {request.qr_code}")
             
-            # Return the proxy number for the caller to dial
             return {
                 "success": True,
-                "message": "Call session created! Dial the number below to connect anonymously.",
-                "proxy_number": caller_participant.proxy_identifier,
-                "call_status": "ready",
-                "session_sid": proxy_session.sid
+                "message": "Call initiated! You will receive a call shortly.",
+                "call_sid": call.sid,
+                "call_status": "initiated"
             }
             
         except Exception as e:
-            logger.error(f"Failed to create proxy session: {str(e)}")
+            logger.error(f"Failed to initiate call: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Failed to initiate call: {str(e)}")
 
 @api_router.get("/user/payments/{mobile_number}")
